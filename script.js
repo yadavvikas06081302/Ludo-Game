@@ -1,14 +1,195 @@
-const board=document.getElementById("board"),rollBtn=document.getElementById("roll"),resetBtn=document.getElementById("reset"),dice=document.getElementById("dice"),msg=document.getElementById("msg");
-const P=[{n:"Red",c:"red",s:0},{n:"Green",c:"green",s:13},{n:"Yellow",c:"yellow",s:26},{n:"Blue",c:"blue",s:39}],T=P.map(()=>[0,0,0,0]);
-let turn=0,die=null,over=false;
-const track=[];for(let c=1;c<=13;c++)track.push([6,c]);for(let r=7;r<=13;r++)track.push([r,13]);for(let c=12;c>=1;c--)track.push([13,c]);for(let r=12;r>=7;r--)track.push([r,1]);
+const board=document.getElementById("board");
+const rollBtn=document.getElementById("roll");
+const newGameBtn=document.getElementById("newGame");
+const diceEl=document.getElementById("dice");
+const message=document.getElementById("message");
+
+const players=[
+ {name:"Red",color:"red",start:0},
+ {name:"Green",color:"green",start:13},
+ {name:"Yellow",color:"yellow",start:26},
+ {name:"Blue",color:"blue",start:39}
+];
+
+// 52 cells around the outside of a standard 15x15 board.
+const track=[];
+for(let c=1;c<=5;c++) track.push([6,c]);
+for(let r=5;r>=1;r--) track.push([r,6]);
+for(let c=7;c<=13;c++) track.push([1,c]);
+for(let r=2;r<=5;r++) track.push([r,13]);
+for(let c=12;c>=9;c--) track.push([6,c]);
+for(let r=7;r<=13;r++) track.push([r,8]);
+for(let c=7;c>=1;c--) track.push([13,c]);
+for(let r=12;r>=9;r--) track.push([r,6]);
+for(let c=5;c>=1;c--) track.push([8,c]);
+for(let r=7;r>=1;r--) track.push([r,1]);
+for(let c=2;c<=5;c++) track.push([6,c]);
+// The above route contains the complete 52-cell circuit.
+const clean=[];
+const used=new Set();
+for(const p of track){const k=p.join(",");if(!used.has(k)){used.add(k);clean.push(p)}}
+track.length=0;
+track.push(...clean.slice(0,52));
+
 const safe=[0,8,13,21,26,34,39,47];
-function build(){board.innerHTML="";for(let r=0;r<15;r++)for(let c=0;c<15;c++){let x=document.createElement("div");x.className="cell";if(r<6&&c<6)x.classList.add("redhome");if(r<6&&c>8)x.classList.add("greenhome");if(r>8&&c<6)x.classList.add("yellowhome");if(r>8&&c>8)x.classList.add("bluehome");if(r>=6&&r<=8&&c>=6&&c<=8)x.classList.add("center");let i=track.findIndex(q=>q[0]==r&&q[1]==c);if(i>=0){x.classList.add("track");if(safe.includes(i))x.classList.add("safe")}board.appendChild(x)}} 
-function can(pi,ti){if(over||pi!==turn||die===null)return false;let n=T[pi][ti];return n!==53&&(n===0?die===6:n+die<=53)}
-function draw(){document.querySelectorAll(".token").forEach(x=>x.remove());P.forEach((p,pi)=>T[pi].forEach((n,ti)=>{if(n<=0||n>52)return;let i=(p.s+n-1)%52,[r,c]=track[i],x=document.createElement("div");x.className="token "+p.c;if(can(pi,ti))x.classList.add("selectable");x.onclick=()=>move(pi,ti);board.children[r*15+c].appendChild(x)}))}
-function status(){P.forEach((_,i)=>document.getElementById("p"+i).classList.toggle("active",i===turn))}
-function roll(){if(over||die!==null)return;die=1+Math.floor(Math.random()*6);dice.textContent=["","⚀","⚁","⚂","⚃","⚄","⚅"][die];if(!T[turn].some((_,i)=>can(turn,i))){msg.textContent=P[turn].n+" has no valid move.";setTimeout(next,700)}else msg.textContent=P[turn].n+" rolled "+die+". Select a highlighted token.";draw()}
-function move(pi,ti){if(!can(pi,ti))return;let n=T[pi][ti];n=n===0?1:n+die;T[pi][ti]=n;let at=(P[pi].s+n-1)%52;if(n<53&&!safe.includes(at))P.forEach((p,oi)=>{if(oi!==pi)T[oi].forEach((v,j)=>{if(v>0&&v<53&&(p.s+v-1)%52===at)T[oi][j]=0})});let six=die===6;die=null;if(T[pi].every(v=>v===53)){over=true;msg.textContent="🎉 "+P[pi].n+" wins!";rollBtn.disabled=true}else if(six)msg.textContent=P[pi].n+" rolled 6 — roll again!";else next();draw()}
-function next(){die=null;turn=(turn+1)%4;status();msg.textContent=P[turn].n+"'s turn — roll the dice.";draw()}
-function reset(){T.forEach(a=>a.fill(0));turn=0;die=null;over=false;rollBtn.disabled=false;dice.textContent="🎲";msg.textContent="Red's turn — roll the dice.";status();build();draw()}
-rollBtn.onclick=roll;resetBtn.onclick=reset;build();status();draw();
+const tokens=players.map(()=>[0,0,0,0]); // 0 home, 1..52 track, 53 finished
+let current=0;
+let dice=null;
+let gameOver=false;
+
+function buildBoard(){
+  board.innerHTML="";
+  for(let r=0;r<15;r++){
+    for(let c=0;c<15;c++){
+      const cell=document.createElement("div");
+      cell.className="cell";
+
+      if(r<6&&c<6)cell.classList.add("home-red");
+      if(r<6&&c>8)cell.classList.add("home-green");
+      if(r>8&&c<6)cell.classList.add("home-yellow");
+      if(r>8&&c>8)cell.classList.add("home-blue");
+
+      if(r>=6&&r<=8&&c>=6&&c<=8)cell.classList.add("center");
+
+      const i=track.findIndex(p=>p[0]===r&&p[1]===c);
+      if(i>=0){
+        cell.classList.add("track");
+        if(safe.includes(i))cell.classList.add("safe");
+        if(i===0)cell.classList.add("start-red");
+        if(i===13)cell.classList.add("start-green");
+        if(i===26)cell.classList.add("start-yellow");
+        if(i===39)cell.classList.add("start-blue");
+      }
+
+      // Colored home lanes leading to the center.
+      if(c===7&&r>=1&&r<=5)cell.classList.add("lane-green");
+      if(c===7&&r>=9&&r<=13)cell.classList.add("lane-yellow");
+      if(r===7&&c>=1&&c<=5)cell.classList.add("lane-red");
+      if(r===7&&c>=9&&c<=13)cell.classList.add("lane-blue");
+
+      // Four home slots.
+      const slot =
+        (r===2||r===4)&&(c===2||c===4) ? true :
+        (r===2||r===4)&&(c===10||c===12) ? true :
+        (r===10||r===12)&&(c===2||c===4) ? true :
+        (r===10||r===12)&&(c===10||c===12) ? true : false;
+      if(slot){
+        const s=document.createElement("div");
+        s.className="home-slot";
+        cell.appendChild(s);
+      }
+      board.appendChild(cell);
+    }
+  }
+}
+
+function canMove(pi,ti){
+  if(gameOver||pi!==current||dice===null)return false;
+  const pos=tokens[pi][ti];
+  if(pos===53)return false;
+  if(pos===0)return dice===6;
+  return pos+dice<=53;
+}
+
+function drawTokens(){
+  document.querySelectorAll(".token").forEach(t=>t.remove());
+  players.forEach((p,pi)=>{
+    tokens[pi].forEach((pos,ti)=>{
+      if(pos<=0||pos>52)return;
+      const index=(p.start+pos-1)%52;
+      const [r,c]=track[index];
+      const token=document.createElement("div");
+      token.className=`token ${p.color}`;
+      if(canMove(pi,ti))token.classList.add("selectable");
+      token.title=`${p.name} token ${ti+1}`;
+      token.onclick=()=>moveToken(pi,ti);
+      board.children[r*15+c].appendChild(token);
+    });
+  });
+}
+
+function updatePlayer(){
+  players.forEach((_,i)=>{
+    document.getElementById("player"+i).classList.toggle("active",i===current);
+  });
+}
+
+function rollDice(){
+  if(gameOver||dice!==null)return;
+  dice=1+Math.floor(Math.random()*6);
+  diceEl.textContent=["","⚀","⚁","⚂","⚃","⚄","⚅"][dice];
+
+  const possible=tokens[current].some((_,i)=>canMove(current,i));
+  if(!possible){
+    message.textContent=`${players[current].name} rolled ${dice}. No valid move.`;
+    setTimeout(nextTurn,800);
+  }else{
+    message.textContent=`${players[current].name} rolled ${dice}. Select a highlighted token.`;
+    drawTokens();
+  }
+}
+
+function moveToken(pi,ti){
+  if(!canMove(pi,ti))return;
+
+  const rolled=dice;
+  let pos=tokens[pi][ti];
+  pos=pos===0?1:pos+rolled;
+  tokens[pi][ti]=pos;
+
+  if(pos<53){
+    const landing=(players[pi].start+pos-1)%52;
+    if(!safe.includes(landing)){
+      players.forEach((p,oi)=>{
+        if(oi===pi)return;
+        tokens[oi].forEach((other,j)=>{
+          if(other>0&&other<53){
+            const otherLanding=(p.start+other-1)%52;
+            if(otherLanding===landing)tokens[oi][j]=0;
+          }
+        });
+      });
+    }
+  }
+
+  dice=null;
+
+  if(tokens[pi].every(v=>v===53)){
+    gameOver=true;
+    rollBtn.disabled=true;
+    message.textContent=`🎉 ${players[pi].name} wins the game!`;
+  }else if(rolled===6){
+    message.textContent=`${players[pi].name} rolled a 6 — roll again!`;
+  }else{
+    nextTurn();
+  }
+  drawTokens();
+}
+
+function nextTurn(){
+  dice=null;
+  current=(current+1)%players.length;
+  updatePlayer();
+  message.textContent=`${players[current].name}'s turn — roll the dice.`;
+  drawTokens();
+}
+
+function resetGame(){
+  tokens.forEach(t=>t.fill(0));
+  current=0;
+  dice=null;
+  gameOver=false;
+  rollBtn.disabled=false;
+  diceEl.textContent="🎲";
+  message.textContent="Red's turn — roll the dice.";
+  updatePlayer();
+  buildBoard();
+  drawTokens();
+}
+
+rollBtn.addEventListener("click",rollDice);
+newGameBtn.addEventListener("click",resetGame);
+
+buildBoard();
+updatePlayer();
+drawTokens();
