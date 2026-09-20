@@ -27,3 +27,31 @@ button:disabled{opacity:.45}.secondary{background:#607d8b}
 .rules{background:#fff;text-align:left;margin-top:12px;padding:14px;border-radius:14px}
 .rules h2{margin-top:0}.rules li{margin:7px 0}
 @media(max-width:480px){.wrap{padding:8px}h1{font-size:27px}.player{font-size:11px;padding:8px 2px}.board{border-width:3px}.rules{font-size:14px}}
+/* Standard Ludo Grid Board Alignment */
+.ludo-board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  width: 100%;
+  max-width: 450px;
+  aspect-ratio: 1 / 1;
+  border: 2px solid #333;
+}
+
+/* Base colors for Home boxes */
+.red-home { grid-column: 1 / 7; grid-row: 1 / 7; background-color: #ff4d4d; }
+.green-home { grid-column: 10 / 16; grid-row: 1 / 7; background-color: #2ecc71; }
+.yellow-home { grid-column: 1 / 7; grid-row: 10 / 16; background-color: #f1c40f; }
+.blue-home { grid-column: 10 / 16; grid-row: 10 / 16; background-color: #3498db; }
+
+/* Center winning area */
+.center-home {
+  grid-column: 7 / 10;
+  grid-row: 7 / 10;
+  background: conic-gradient(
+    #ff4d4d 0deg 90deg,
+    #2ecc71 90deg 180deg,
+    #3498db 180deg 270deg,
+    #f1c40f 270deg 360deg
+  );
+}
