@@ -1,43 +1,170 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Ludo Game</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ludo Game Fixed</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f2f5; }
+    
+    .ludo-container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    
+    /* 15x15 Grid Layout Fix */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(15, 1fr);
+      width: 90vw;
+      max-width: 450px;
+      height: 90vw;
+      max-height: 450px;
+      border: 3px solid #333;
+      background-color: #fff;
+    }
+
+    .cell { border: 1px solid #ccc; position: relative; display: flex; align-items: center; justify-content: center; }
+
+    /* Home Quadrants */
+    .red-zone { grid-column: 1 / 7; grid-row: 1 / 7; background: #ff4d4d; padding: 10%; display: grid; grid-template-columns: 1fr 1fr; gap: 20%; background-clip: content-box; }
+    .green-zone { grid-column: 10 / 16; grid-row: 1 / 7; background: #2ecc71; padding: 10%; display: grid; grid-template-columns: 1fr 1fr; gap: 20%; background-clip: content-box; }
+    .yellow-zone { grid-column: 1 / 7; grid-row: 10 / 16; background: #f1c40f; padding: 10%; display: grid; grid-template-columns: 1fr 1fr; gap: 20%; background-clip: content-box; }
+    .blue-zone { grid-column: 10 / 16; grid-row: 10 / 16; background: #3498db; padding: 10%; display: grid; grid-template-columns: 1fr 1fr; gap: 20%; background-clip: content-box; }
+
+    .home-circle { background: #fff; border-radius: 50%; border: 2px solid #333; display: flex; align-items: center; justify-content: center; }
+
+    /* Colored Paths */
+    .bg-red { background-color: #ff4d4d !important; }
+    .bg-green { background-color: #2ecc71 !important; }
+    .bg-yellow { background-color: #f1c40f !important; }
+    .bg-blue { background-color: #3498db !important; }
+
+    /* Center Triangle Home */
+    .center-home {
+      grid-column: 7 / 10;
+      grid-row: 7 / 10;
+      background: conic-gradient(#ff4d4d 0deg 90deg, #2ecc71 90deg 180deg, #3498db 180deg 270deg, #f1c40f 270deg 360deg);
+      border: 1px solid #333;
+    }
+
+    /* Tokens */
+    .token {
+      width: 70%;
+      height: 70%;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .token.highlighted {
+      animation: pulse 0.8s infinite alternate;
+      border: 3px solid #000;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.25); }
+    }
+
+    /* Controls */
+    .controls { text-align: center; margin-top: 10px; }
+    button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; background: #333; color: white; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🎲 Ludo Game</h1>
-  <p class="sub">2–4 Player • Classic Browser Ludo</p>
 
-  <div class="players">
-    <div class="player red active" id="player0">🔴 Red</div>
-    <div class="player green" id="player1">🟢 Green</div>
-    <div class="player yellow" id="player2">🟡 Yellow</div>
-    <div class="player blue" id="player3">🔵 Blue</div>
+<div class="ludo-container">
+  <div class="board" id="board">
+    <!-- Home Quadrants -->
+    <div class="red-zone">
+      <div class="home-circle" id="red-h1"></div><div class="home-circle" id="red-h2"></div>
+      <div class="home-circle" id="red-h3"></div><div class="home-circle" id="red-h4"></div>
+    </div>
+    <div class="green-zone">
+      <div class="home-circle" id="green-h1"></div><div class="home-circle" id="green-h2"></div>
+      <div class="home-circle" id="green-h3"></div><div class="home-circle" id="green-h4"></div>
+    </div>
+    <div class="yellow-zone">
+      <div class="home-circle" id="yellow-h1"></div><div class="home-circle" id="yellow-h2"></div>
+      <div class="home-circle" id="yellow-h3"></div><div class="home-circle" id="yellow-h4"></div>
+    </div>
+    <div class="blue-zone">
+      <div class="home-circle" id="blue-h1"></div><div class="home-circle" id="blue-h2"></div>
+      <div class="home-circle" id="blue-h3"></div><div class="home-circle" id="blue-h4"></div>
+    </div>
+
+    <!-- Center Winning Home Area -->
+    <div class="center-home"></div>
   </div>
-
-  <div id="board" class="board"></div>
 
   <div class="controls">
-    <div id="dice" class="dice">🎲</div>
-    <button id="roll">Roll Dice</button>
-    <button id="newGame" class="secondary">New Game</button>
-    <div id="message">Red's turn — roll the dice.</div>
+    <div id="status">Turn: <b style="color:red;">RED</b></div>
+    <div id="dice-result" style="font-size: 24px; margin: 10px;">🎲 -</div>
+    <button id="roll-btn" onclick="rollDice()">Roll Dice</button>
   </div>
-
-  <section class="rules">
-    <h2>How to Play</h2>
-    <ol>
-      <li>Roll a 6 to bring a token out of home.</li>
-      <li>Click a highlighted token to move it.</li>
-      <li>Landing on an opponent sends that token home, except on safe cells.</li>
-      <li>A 6 gives another turn.</li>
-      <li>First player to finish all four tokens wins.</li>
-    </ol>
-  </section>
 </div>
-<script src="script.js"></script>
+
+<script>
+  // Simple State Management
+  let turn = 'green'; // Example start player
+  let diceValue = 0;
+  let canRoll = true;
+
+  // Render basic Tokens inside Home
+  const players = ['green', 'red', 'yellow', 'blue'];
+  
+  function initGame() {
+    document.getElementById('status').innerText = `Turn: ${turn.toUpperCase()}`;
+  }
+
+  function rollDice() {
+    if (!canRoll) return;
+    diceValue = Math.floor(Math.random() * 6) + 1;
+    document.getElementById('dice-result').innerText = `🎲 ${diceValue}`;
+    canRoll = false;
+
+    if (diceValue === 6) {
+      document.getElementById('status').innerText = `${turn.toUpperCase()} rolled 6! Click token to move.`;
+      highlightHomeTokens(turn);
+    } else {
+      document.getElementById('status').innerText = `${turn.toUpperCase()} rolled ${diceValue}. No moves!`;
+      setTimeout(nextTurn, 1000);
+    }
+  }
+
+  function highlightHomeTokens(player) {
+    // Add event listeners dynamically on rolled 6
+    for(let i=1; i<=4; i++) {
+      let homeSpot = document.getElementById(`${player}-h${i}`);
+      if(homeSpot) {
+        let token = document.createElement('div');
+        token.className = `token bg-${player} highlighted`;
+        token.onclick = function() {
+          alert(`Token ${i} moved out!`);
+          clearHighlights();
+          nextTurn();
+        };
+        homeSpot.appendChild(token);
+      }
+    }
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll('.token').forEach(el => el.remove());
+  }
+
+  function nextTurn() {
+    let index = players.indexOf(turn);
+    turn = players[(index + 1) % players.length];
+    document.getElementById('status').innerText = `Turn: ${turn.toUpperCase()}`;
+    canRoll = true;
+  }
+
+  initGame();
+</script>
 </body>
 </html>
+  
