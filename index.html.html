@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ludo Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🎲 Ludo Game</h1>
+      <p>2–4 Player • Mobile Friendly</p>
+    </header>
+
+    <main>
+      <section class="game-card">
+        <div class="players">
+          <div class="player active" id="player-red"><span class="dot red"></span>Red</div>
+          <div class="player" id="player-green"><span class="dot green"></span>Green</div>
+          <div class="player" id="player-yellow"><span class="dot yellow"></span>Yellow</div>
+          <div class="player" id="player-blue"><span class="dot blue"></span>Blue</div>
+        </div>
+
+        <div class="board" id="board" aria-label="Ludo board"></div>
+
+        <div class="controls">
+          <div class="dice-box">
+            <div id="dice">🎲</div>
+            <button id="rollBtn">Roll Dice</button>
+          </div>
+          <div id="message">Red's turn — roll the dice.</div>
+          <button class="reset" id="resetBtn">New Game</button>
+        </div>
+      </section>
+
+      <section class="rules">
+        <h2>How to Play</h2>
+        <ul>
+          <li>Each player has 4 tokens.</li>
+          <li>Roll a 6 to bring a token out of the home area.</li>
+          <li>Click a highlighted token to move it.</li>
+          <li>Landing on an opponent token sends it home, except on safe cells.</li>
+          <li>Roll a 6 to get another turn.</li>
+          <li>First player to bring all 4 tokens to the center wins.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
