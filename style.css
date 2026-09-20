@@ -137,3 +137,13 @@ button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
+/* Token position on main grid when unlocked */
+.token.on-board {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  justify-self: center;
+  align-self: center;
+  z-index: 100;
+  box-shadow: 0 0 6px rgba(0,0,0,0.6);
+}
