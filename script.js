@@ -1,7 +1,15 @@
 const players = ['green', 'red', 'blue', 'yellow'];
-let currentPlayerIndex = 0;
+let currentPlayerIndex = 1; // Starting with Red as in screenshot
 let diceValue = 0;
 let isRollAllowed = true;
+
+// Define starting positions on grid for each color path
+const startPositions = {
+  red: { row: 7, col: 2 },
+  green: { row: 2, col: 9 },
+  blue: { row: 9, col: 14 },
+  yellow: { row: 14, col: 7 }
+};
 
 const playerTurnText = document.getElementById('player-turn');
 const diceDisplay = document.getElementById('dice-display');
@@ -28,7 +36,7 @@ function rollDice() {
     document.getElementById('status').childNodes[0].nodeValue = "Rolled 6! Tap token to move: ";
     enableTokenSelection(currentPlayer);
   } else {
-    document.getElementById('status').childNodes[0].nodeValue = "No moves! Next turn in 1s...";
+    document.getElementById('status').childNodes[0].nodeValue = "No 6! Next turn in 1s...";
     setTimeout(switchTurn, 1000);
   }
 }
@@ -38,19 +46,30 @@ function enableTokenSelection(player) {
     const token = document.getElementById(`${player}-t${i}`);
     if (token) {
       token.classList.add('clickable');
-      token.onclick = () => handleTokenClick(token, player, i);
+      token.onclick = () => moveTokenToStart(token, player);
     }
   }
 }
 
-function handleTokenClick(token, player, tokenNum) {
-  alert(`${player.toUpperCase()} Token ${tokenNum} Unlocked/Moved!`);
+function moveTokenToStart(token, player) {
+  // Disable clicks and animation
   disableAllTokens();
-  
-  // Rule: Extra turn on rolling 6
+
+  const board = document.getElementById('board');
+  const startPos = startPositions[player];
+
+  // Token ko Home Box se nikalke Board Grid cell par append karna
+  token.style.gridRow = startPos.row;
+  token.style.gridColumn = startPos.col;
+  token.classList.add('on-board');
+
+  // Board par move karna
+  board.appendChild(token);
+
+  // Turn management (Extra turn on 6)
+  document.getElementById('status').childNodes[0].nodeValue = "Moved! Roll again: ";
   isRollAllowed = true;
   rollBtn.disabled = false;
-  document.getElementById('status').childNodes[0].nodeValue = "Rolled 6! Roll again: ";
 }
 
 function disableAllTokens() {
