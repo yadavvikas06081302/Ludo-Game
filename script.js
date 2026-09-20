@@ -193,3 +193,50 @@ newGameBtn.addEventListener("click",resetGame);
 buildBoard();
 updatePlayer();
 drawTokens();
+// Current player state & dice value check
+function onDiceRoll(diceValue) {
+  const currentPlayer = getCurrentPlayer(); // 'blue', 'red', etc.
+  
+  // Check if player has valid moves
+  const movableTokens = getMovableTokens(currentPlayer, diceValue);
+
+  if (movableTokens.length === 0) {
+    // Agar koi move possible nahi hai toh turn switch karein
+    switchTurn();
+    return;
+  }
+
+  // Highlightable class add karein taaki user click kar sake
+  movableTokens.forEach(token => {
+    const tokenElement = document.getElementById(token.id);
+    tokenElement.classList.add('highlighted-token');
+    
+    // Click Event attachment
+    tokenElement.onclick = () => moveToken(token, diceValue);
+  });
+}
+
+function moveToken(token, step) {
+  // Clear highlights
+  document.querySelectorAll('.highlighted-token').forEach(el => {
+    el.classList.remove('highlighted-token');
+    el.onclick = null;
+  });
+
+  if (token.isAtHome && step === 6) {
+    // Home se bahar nikalne ka logic (Starting cell index par bhejna)
+    token.isAtHome = false;
+    token.position = START_POSITIONS[token.color];
+  } else if (!token.isAtHome) {
+    // Board par aage badhane ka logic
+    token.position += step;
+  }
+
+  // UI render update
+  updateTokenUI(token);
+
+  // Extra turn on 6, else next turn
+  if (step !== 6) {
+    switchTurn();
+  }
+}
